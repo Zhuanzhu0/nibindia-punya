@@ -1,0 +1,375 @@
+/* Ganda Pani, Saaf Bijli — scroll film
+   Stack: GSAP 3 + ScrollTrigger (scrubbed timelines, pinning), Lenis (inertial scroll),
+   Three.js (GPU particle river), Canvas2D (microbe simulation). */
+(() => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const clamp01 = (v) => Math.max(0, Math.min(1, v));
+  const FILM_SECONDS = 176.6, FPS = 30;
+  gsap.registerPlugin(ScrollTrigger);
+  gsap.defaults({ ease: "expo.out" });
+  document.body.classList.add("loading");
+
+  /* ---------- smooth scroll (Lenis drives ScrollTrigger) ---------- */
+  let lenis = null;
+  if (!reduce && window.Lenis) {
+    lenis = new Lenis({ duration: 1.15, smoothWheel: true });
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add((t) => lenis.raf(t * 1000));
+    gsap.ticker.lagSmoothing(0);
+    lenis.stop();
+  }
+  $$('a[href^="#"]').forEach((a) => a.addEventListener("click", (e) => {
+    const el = $(a.getAttribute("href")); if (!el) return;
+    e.preventDefault(); lenis ? lenis.scrollTo(el, { offset: 0, duration: 1.6 }) : el.scrollIntoView({ behavior: "smooth" });
+  }));
+
+  /* ---------- text splitting ---------- */
+  const splitChars = (el) => {
+    const html = el.innerHTML.split(/<br\s*\/?>/i);
+    el.innerHTML = html.map((line) => {
+      const tmp = document.createElement("div"); tmp.innerHTML = line;
+      let out = "";
+      tmp.childNodes.forEach((n) => {
+        const wrapEm = n.nodeType === 1 && n.tagName === "EM";
+        const text = n.textContent;
+        const chars = [...text].map((c) => c === " " ? " " : `<span class="ch">${c}</span>`).join("");
+        out += wrapEm ? `<em>${chars}</em>` : chars;
+      });
+      return `<span class="ln">${out}</span>`;
+    }).join("<br>");
+    return $$(".ch", el);
+  };
+  const splitWords = (el) => {
+    const nodes = [...el.childNodes]; el.innerHTML = "";
+    nodes.forEach((n) => {
+      const isEm = n.nodeType === 1 && n.tagName === "EM";
+      n.textContent.split(/(\s+)/).forEach((w) => {
+        if (!w.trim()) { el.append(document.createTextNode(w)); return; }
+        const ln = document.createElement("span"); ln.className = "ln";
+        const s = document.createElement(isEm ? "em" : "span"); s.className = "w"; s.textContent = w;
+        ln.append(s); el.append(ln);
+      });
+    });
+    return $$(".w", el);
+  };
+
+  /* ---------- cursor ---------- */
+  const cursor = $("#cursor");
+  if (cursor && matchMedia("(hover:hover)").matches) {
+    const xTo = gsap.quickTo(cursor, "x", { duration: 0.45, ease: "power3" });
+    const yTo = gsap.quickTo(cursor, "y", { duration: 0.45, ease: "power3" });
+    addEventListener("mousemove", (e) => { xTo(e.clientX); yTo(e.clientY); });
+    $$("a, img, video, summary, .edl li").forEach((el) => {
+      el.addEventListener("mouseenter", () => cursor.classList.add("is-big"));
+      el.addEventListener("mouseleave", () => cursor.classList.remove("is-big"));
+    });
+  }
+
+  /* ---------- progress bar + timecode (scroll = playhead) ---------- */
+  const tc = $("#timecode");
+  const pad = (n) => String(Math.floor(n)).padStart(2, "0");
+  ScrollTrigger.create({
+    start: 0, end: "max",
+    onUpdate: (st) => {
+      gsap.set("#progress", { scaleX: st.progress });
+      const t = st.progress * FILM_SECONDS;
+      tc.textContent = `00:${pad(t / 60)}:${pad(t % 60)}:${pad((t * FPS) % FPS)}`;
+    },
+  });
+
+  /* =========================================================
+     HERO — GPU particle river (Three.js points + custom shader)
+     ========================================================= */
+  const heroState = { mx: 9, my: 9, energy: 0 };
+  function heroRiver() {
+    const canvas = $("#riverGL");
+    if (window.__noThree || !window.THREE) return fallbackRiver(canvas);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+    camera.position.set(0, 0.6, 9); camera.lookAt(0, 0, 0);
+    const N = 3600;
+    const pos = new Float32Array(N * 3), seed = new Float32Array(N);
+    for (let i = 0; i < N; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 22;
+      pos[i * 3 + 1] = (Math.random() - 0.5) * 1.6;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 4;
+      seed[i] = Math.random();
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute("seed", new THREE.BufferAttribute(seed, 1));
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: { uTime: { value: 0 }, uMouse: { value: new THREE.Vector2(9, 9) }, uEnergy: { value: 0 }, uPR: { value: renderer.getPixelRatio() } },
+      vertexShader: `
+        attribute float seed; uniform float uTime, uEnergy, uPR; uniform vec2 uMouse; varying float vSeed; varying float vGlow;
+        void main(){
+          vec3 p = position;
+          float speed = 0.35 + seed * 0.5;
+          p.x = mod(p.x + uTime * speed + 11.0, 22.0) - 11.0;           // flow left -> right, wrap
+          float wave = sin(p.x * 0.55 + uTime * 0.6) * 0.9 + sin(p.x * 1.3 - uTime * 0.4) * 0.25;
+          p.y += wave - 0.3;
+          // energy: electrons lift off the river surface
+          p.y += uEnergy * seed * seed * 4.5 * (0.6 + 0.4 * sin(uTime * 2.0 + seed * 30.0));
+          // cursor parts the water
+          vec2 d = p.xy - uMouse; float r = length(d);
+          p.xy += normalize(d + 0.0001) * smoothstep(1.6, 0.0, r) * 0.9;
+          vec4 mv = modelViewMatrix * vec4(p, 1.0);
+          gl_Position = projectionMatrix * mv;
+          gl_PointSize = (2.0 + seed * 3.5) * uPR * (8.0 / -mv.z);
+          vSeed = seed; vGlow = smoothstep(1.6, 0.0, r);
+        }`,
+      fragmentShader: `
+        uniform float uEnergy; varying float vSeed; varying float vGlow;
+        void main(){
+          vec2 c = gl_PointCoord - 0.5; float d = length(c); if (d > 0.5) discard;
+          float a = smoothstep(0.5, 0.0, d);
+          vec3 mud = mix(vec3(0.48,0.39,0.25), vec3(0.18,0.50,0.63), vSeed*0.5);
+          vec3 energy = vec3(0.23,0.89,0.64);
+          vec3 col = mix(mud, energy, clamp(uEnergy * 1.4 * (0.4 + vSeed), 0.0, 1.0)) + vGlow * 0.25;
+          gl_FragColor = vec4(col, a * (0.55 + vSeed * 0.45));
+        }`,
+    });
+    scene.add(new THREE.Points(geo, mat));
+    const resize = () => {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    };
+    resize(); addEventListener("resize", resize);
+    canvas.parentElement.addEventListener("mousemove", (e) => {
+      const r = canvas.getBoundingClientRect();
+      const nx = ((e.clientX - r.left) / r.width) * 2 - 1, ny = -((e.clientY - r.top) / r.height) * 2 + 1;
+      // project onto z=0 plane
+      const v = new THREE.Vector3(nx, ny, 0.5).unproject(camera).sub(camera.position).normalize();
+      const k = -camera.position.z / v.z; const p = camera.position.clone().add(v.multiplyScalar(k));
+      heroState.mx = p.x; heroState.my = p.y;
+    });
+    canvas.parentElement.addEventListener("mouseleave", () => { heroState.mx = 9; heroState.my = 9; });
+    let visible = true;
+    ScrollTrigger.create({ trigger: ".hero", start: "top bottom", end: "bottom top", onToggle: (s) => (visible = s.isActive) });
+    const m = mat.uniforms.uMouse.value;
+    gsap.ticker.add((t) => {
+      if (!visible) return;
+      mat.uniforms.uTime.value = reduce ? 0 : t;
+      m.x += (heroState.mx - m.x) * 0.08; m.y += (heroState.my - m.y) * 0.08;
+      mat.uniforms.uEnergy.value = heroState.energy;
+      camera.position.y = 0.6 + heroState.energy * 1.2;
+      camera.lookAt(0, heroState.energy * 0.8, 0);
+      renderer.render(scene, camera);
+    });
+  }
+  function fallbackRiver(canvas) {
+    const ctx = canvas.getContext("2d"); const pts = Array.from({ length: 900 }, () => ({ x: Math.random(), y: Math.random(), s: Math.random() }));
+    const fit = () => { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }; fit(); addEventListener("resize", fit);
+    gsap.ticker.add((t) => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pts.forEach((p) => {
+        const x = ((p.x + t * 0.02 * (0.5 + p.s)) % 1) * canvas.width;
+        const y = canvas.height * 0.62 + Math.sin(x * 0.006 + t * 0.6) * 60 + (p.y - 0.5) * 80 - heroState.energy * p.s * p.s * 300;
+        ctx.fillStyle = heroState.energy > p.s ? "rgba(59,227,164,.8)" : "rgba(160,130,80,.6)";
+        ctx.fillRect(x, y, 2 + p.s * 2, 2 + p.s * 2);
+      });
+    });
+  }
+
+  /* =========================================================
+     SCIENCE — Canvas2D microbe + electron simulation
+     ========================================================= */
+  const sci = { p: 0 };
+  function microbes() {
+    const c = $("#microbes"), ctx = c.getContext("2d");
+    let W = 0, H = 0, dpr = Math.min(devicePixelRatio, 2);
+    const fit = () => { W = c.clientWidth; H = c.clientHeight; c.width = W * dpr; c.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+    fit(); addEventListener("resize", fit);
+    const bugs = Array.from({ length: 70 }, (_, i) => ({ x: Math.random(), y: 0.45 + Math.random() * 0.55, a: Math.random() * 6.28, l: 26 + Math.random() * 26, v: 0.2 + Math.random() * 0.5, ph: Math.random() * 6 }));
+    const e = []; let acc = 0, visible = false;
+    ScrollTrigger.create({ trigger: ".science", start: "top bottom", end: "bottom top", onToggle: (s) => (visible = s.isActive) });
+    gsap.ticker.add((t, dt) => {
+      if (!visible) return;
+      ctx.clearRect(0, 0, W, H);
+      // anode plate at top
+      const plateY = H * 0.08;
+      ctx.fillStyle = "rgba(40,40,40,.9)"; ctx.fillRect(W * 0.55, plateY - 10, W * 0.4, 14);
+      ctx.fillStyle = "rgba(255,255,255,.45)"; ctx.font = "12px JetBrains Mono"; ctx.fillText("ANODE (CARBON FELT)", W * 0.55, plateY - 18);
+      bugs.forEach((b) => {
+        b.a += Math.sin(t * 0.7 + b.ph) * 0.01; b.x += Math.cos(b.a) * b.v * 0.0006; b.y += Math.sin(b.a) * b.v * 0.0004;
+        if (b.x < -0.05) b.x = 1.05; if (b.x > 1.05) b.x = -0.05; if (b.y < 0.4) b.a = Math.abs(b.a); if (b.y > 1.02) b.a = -Math.abs(b.a);
+        const x = b.x * W, y = b.y * H;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(b.a);
+        ctx.fillStyle = "rgba(160,200,120,.42)"; ctx.strokeStyle = "rgba(210,240,170,.55)"; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.roundRect(-b.l / 2, -7, b.l, 14, 7); ctx.fill(); ctx.stroke(); ctx.restore();
+      });
+      // emit electrons proportional to scroll progress (sci.p)
+      acc += dt * 0.001 * sci.p * 60;
+      while (acc > 1 && e.length < 400) { acc -= 1; const b = bugs[(Math.random() * bugs.length) | 0]; e.push({ x: b.x * W, y: b.y * H, vx: (Math.random() - 0.5) * 0.6, life: 0 }); }
+      ctx.font = "600 13px Space Grotesk";
+      for (let i = e.length - 1; i >= 0; i--) {
+        const p = e[i]; p.life += dt * 0.001;
+        const tx = W * (0.57 + ((i * 37) % 100) / 100 * 0.36);
+        p.vx += (tx - p.x) * 0.00012 * dt; p.x += p.vx; p.y -= (1.2 + p.life * 1.4) * dt * 0.06;
+        if (p.y < plateY) { e.splice(i, 1); continue; }
+        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 14);
+        g.addColorStop(0, "rgba(59,227,164,.9)"); g.addColorStop(1, "rgba(59,227,164,0)");
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, 14, 0, 6.28); ctx.fill();
+        ctx.fillStyle = "#04110b"; ctx.fillText("e", p.x - 4, p.y + 4);
+      }
+    });
+  }
+
+  /* =========================================================
+     END — rising electron field
+     ========================================================= */
+  function endField() {
+    const c = $("#endGL"), ctx = c.getContext("2d");
+    let W, H; const fit = () => { W = c.width = c.clientWidth; H = c.height = c.clientHeight; }; fit(); addEventListener("resize", fit);
+    const ps = Array.from({ length: 160 }, () => ({ x: Math.random(), y: Math.random(), s: Math.random() }));
+    let vis = false; ScrollTrigger.create({ trigger: ".end", start: "top bottom", onToggle: (s) => (vis = s.isActive) });
+    gsap.ticker.add((t) => {
+      if (!vis) return; ctx.clearRect(0, 0, W, H);
+      ps.forEach((p) => {
+        const y = ((p.y - t * 0.02 * (0.3 + p.s)) % 1 + 1) % 1 * H, x = p.x * W + Math.sin(t + p.s * 20) * 20;
+        ctx.fillStyle = `rgba(59,227,164,${0.15 + p.s * 0.5})`; ctx.beginPath(); ctx.arc(x, y, 1 + p.s * 2.5, 0, 6.28); ctx.fill();
+      });
+    });
+  }
+
+  /* =========================================================
+     SCROLL SCENES
+     ========================================================= */
+  // editor's notes live inside pinned frames so they're on screen during the shot
+  $$("section").forEach((sec) => {
+    const note = $(":scope > .ed-note", sec);
+    const pin = $(":scope > [class$='__pin']", sec);
+    if (note && pin) pin.append(note);
+  });
+
+  function scenes() {
+    // generic word reveals
+    $$(".split-words").forEach((el) => {
+      if (el.id === "question") return;
+      const w = splitWords(el);
+      gsap.from(w, { yPercent: 110, rotate: 4, duration: 1.1, stagger: 0.035, scrollTrigger: { trigger: el, start: "top 82%" } });
+    });
+    $$(".end .split").forEach((el) => {
+      const ch = splitChars(el);
+      gsap.from(ch, { yPercent: 110, duration: 1, stagger: 0.012, scrollTrigger: { trigger: el, start: "top 80%" } });
+    });
+    $$(".stagger").forEach((el, i) => gsap.from(el, { y: 40, opacity: 0, duration: 1, delay: (i % 3) * 0.08, scrollTrigger: { trigger: el, start: "top 88%" } }));
+
+    // hero: scroll converts mud -> energy, title drifts
+    gsap.to(heroState, { energy: 1, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
+    gsap.to(".hero__inner", { yPercent: -30, opacity: 0, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
+
+    // 02 gomti iris
+    const g = gsap.timeline({ scrollTrigger: { trigger: ".gomti", start: "top top", end: "bottom bottom", scrub: 1 } });
+    g.fromTo("#gomtiFrame", { clipPath: "inset(30% 30% 30% 30% round 24px)" }, { clipPath: "inset(0% 0% 0% 0% round 0px)", ease: "power2.inOut", duration: 1 })
+     .fromTo("#gomtiImg", { scale: 1.25 }, { scale: 1, ease: "power1.inOut", duration: 1.4 }, 0)
+     .from(".gomti__title .line", { yPercent: 60, opacity: 0, stagger: 0.25, duration: 0.5, ease: "power3.out" }, 0.7);
+
+    // 03 horizontal track
+    const track = $("#track");
+    const dist = () => track.scrollWidth - innerWidth + innerWidth * 0.08;
+    const h = gsap.to(track, { x: () => -dist(), ease: "none",
+      scrollTrigger: { trigger: ".problem", pin: ".problem__pin", start: "top top", end: () => "+=" + dist(), scrub: 1, invalidateOnRefresh: true } });
+    $$(".pcard__img img").forEach((img) => gsap.fromTo(img, { xPercent: -8 }, { xPercent: 8, ease: "none",
+      scrollTrigger: { trigger: img.closest(".pcard"), containerAnimation: h, start: "left right", end: "right left", scrub: true } }));
+    const ring = { v: 0 };
+    gsap.to(ring, { v: 95, ease: "power2.out", duration: 2,
+      scrollTrigger: { trigger: ".pcard--stat", containerAnimation: h, start: "left 70%", toggleActions: "play none none reverse" },
+      onUpdate: () => { $("#ringNum").textContent = Math.round(ring.v); gsap.set("#ringFg", { strokeDashoffset: 590.6 * (1 - ring.v / 100) }); } });
+
+    // 04 marquee + parallax
+    gsap.fromTo("#marquee", { xPercent: 0 }, { xPercent: -40, ease: "none", scrollTrigger: { trigger: ".gap", start: "top bottom", end: "bottom top", scrub: true } });
+    $$(".parallax").forEach((el) => {
+      const sp = parseFloat(el.dataset.speed || "-0.15"); const img = $("img", el);
+      gsap.fromTo(img, { yPercent: sp * 50 }, { yPercent: -sp * 50, ease: "none", scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true } });
+    });
+
+    // 05 question — word-by-word light-up
+    const qw = splitWords($("#question"));
+    gsap.to(qw, { opacity: 1, stagger: 0.5, ease: "none", scrollTrigger: { trigger: ".question", start: "top top", end: "bottom bottom", scrub: true } });
+
+    // 06 science
+    const lines = $$(".sci-line");
+    ScrollTrigger.create({ trigger: ".science", start: "top top", end: "bottom bottom", scrub: true,
+      onUpdate: (s) => {
+        sci.p = clamp01((s.progress - 0.3) / 0.6);
+        lines.forEach((l, i) => gsap.set(l, { opacity: 0.12 + 0.88 * clamp01(s.progress * 3.2 - i * 0.9) }));
+        $("#volt").textContent = (0.05 + sci.p * 0.6).toFixed(2);
+      } });
+
+    // 07 lab wipe
+    gsap.timeline({ scrollTrigger: { trigger: ".lab", start: "top 75%", end: "center center", scrub: 1 } })
+      .to(".lab__img", { clipPath: "inset(0 0 0 0% round 22px)", ease: "power3.inOut" })
+      .fromTo(".lab__img img", { scale: 1.2 }, { scale: 1, ease: "power2.out" }, 0);
+
+    // 08 how — pinned steps + self-drawing wire
+    const wire = $("#wire"); const wl = wire.getTotalLength();
+    gsap.set(wire, { strokeDasharray: `${wl} ${wl}`, strokeDashoffset: wl });
+    const nodes = $$("#howSvg .node"), steps = $$(".how__steps li");
+    ScrollTrigger.create({ trigger: ".how", start: "top top", end: "bottom bottom", scrub: true,
+      onUpdate: (s) => {
+        const p = s.progress, idx = Math.min(3, Math.floor(p * 4.4));
+        gsap.set(wire, { strokeDashoffset: wl * (1 - clamp01(p * 1.25)) });
+        nodes.forEach((n, i) => { n.classList.toggle("on", i <= idx); n.classList.toggle("active", i === idx); });
+        steps.forEach((n, i) => n.classList.toggle("on", i <= idx));
+        $("#mcuText").textContent = idx >= 2 ? (idx === 2 ? "Circuit: awake" : "Circuit: asleep") : "Circuit";
+      } });
+
+    // 09 bars
+    gsap.utils.toArray(".bar").forEach((b, i) => gsap.to($("i", b), { scaleY: parseFloat(b.dataset.h), ease: "power3.out",
+      scrollTrigger: { trigger: "#bars", start: "top 75%", end: "bottom 45%", scrub: 1 }, delay: i * 0.2 }));
+    gsap.from(".equation", { scale: 0.85, opacity: 0, duration: 1.2, ease: "back.out(1.6)", scrollTrigger: { trigger: ".equation", start: "top 85%" } });
+
+    // 10 map — path draw + pins
+    const river = $("#river"), rLine = $("#riverLine"), L = river.getTotalLength(), svg = $("#mapSvg");
+    [river, rLine].forEach((p) => gsap.set(p, { strokeDasharray: L, strokeDashoffset: L }));
+    const cols = ["#e5574b", "#f2b544", "#e5574b", "#3be3a4", "#f2b544", "#3be3a4", "#e5574b"];
+    const pins = cols.map((c, i) => {
+      const pt = river.getPointAtLength(L * (0.1 + i * 0.13));
+      const gEl = document.createElementNS("http://www.w3.org/2000/svg", "g"); gEl.setAttribute("class", "pin");
+      gEl.innerHTML = `<line x1="${pt.x}" y1="${pt.y - 120}" x2="${pt.x}" y2="${pt.y}"/><circle class="halo" cx="${pt.x}" cy="${pt.y - 130}" r="26" fill="${c}"/><circle cx="${pt.x}" cy="${pt.y - 130}" r="15" fill="${c}"/><text x="${pt.x}" y="${pt.y - 168}">D${i + 1}</text>`;
+      svg.append(gEl); gsap.set(gEl, { opacity: 0, scale: 0, transformOrigin: `${pt.x}px ${pt.y - 130}px` });
+      gsap.to($(".halo", gEl), { attr: { r: 34 }, opacity: 0.08, repeat: -1, yoyo: true, duration: 1.4 + i * 0.1, ease: "sine.inOut" });
+      return gEl;
+    });
+    const mt = gsap.timeline({ scrollTrigger: { trigger: ".map", start: "top top", end: "bottom bottom", scrub: 1 } });
+    mt.to([river, rLine], { strokeDashoffset: 0, ease: "power2.inOut", duration: 1 });
+    pins.forEach((p, i) => mt.to(p, { opacity: 1, scale: 1, ease: "back.out(2.2)", duration: 0.18 }, 0.25 + i * 0.1));
+
+    // 12 director's cut
+    gsap.from(".cut__player", { scale: 0.88, opacity: 0.4, ease: "none", scrollTrigger: { trigger: ".cut__player", start: "top bottom", end: "top 30%", scrub: true } });
+    const film = $("#film"), edl = $$("#edl li");
+    edl.forEach((li) => li.addEventListener("click", () => { film.currentTime = +li.dataset.t; film.play(); }));
+    film.addEventListener("timeupdate", () => {
+      let cur = 0; edl.forEach((li, i) => { if (film.currentTime >= +li.dataset.t) cur = i; });
+      edl.forEach((li, i) => li.classList.toggle("on", i === cur));
+    });
+  }
+
+  /* ---------- credits ---------- */
+  fetch("assets/credits.json").then((r) => r.json()).then((c) => {
+    $("#creditList").innerHTML = Object.values(c).map((x) => `<li><b>${x.tag}</b>: ${x.credit}</li>`).join("");
+  }).catch(() => {});
+
+  /* ---------- boot: loader -> hero intro ---------- */
+  const heroChars = splitChars($(".hero__title"));
+  heroRiver(); microbes(); endField();
+  scenes(); // scroll-scrubbed scenes only move when the user scrolls, so they stay on for reduced-motion users
+
+  const count = { v: 0 };
+  const intro = gsap.timeline({ paused: true })
+    .from(heroChars, { yPercent: 120, rotate: 8, duration: 1.3, stagger: 0.025, ease: "expo.out" })
+    .from(".hero .reveal-up", { y: 30, opacity: 0, duration: 1, stagger: 0.12 }, 0.3)
+    .from(".hero__scroll", { opacity: 0, duration: 1 }, 0.8);
+  gsap.timeline()
+    .to(count, { v: 100, duration: reduce ? 0.2 : 1.6, ease: "power2.inOut",
+      onUpdate: () => { $("#loadNum").textContent = Math.round(count.v); $("#loadBar").style.width = count.v + "%"; } })
+    .to("#loader", { yPercent: -100, duration: 1.1, ease: "expo.inOut" }, "+=0.15")
+    .add(() => { document.body.classList.remove("loading"); lenis && lenis.start(); intro.play(); ScrollTrigger.refresh(); }, "-=0.6")
+    .set("#loader", { display: "none" });
+})();

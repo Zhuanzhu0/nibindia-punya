@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ganda Pani, Saaf Bijli · A drain monitor that runs on sewage</title>
+<meta name="description" content="A battery-free drain monitor powered by microbial fuel cells. NIB 2026 · Future Innovators Exhibition · Theme: Society Welfare.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- PRELOADER -->
+<div class="loader" id="loader">
+  <div class="loader__count"><span id="loadNum">0</span>%</div>
+  <div class="loader__title">Ganda Pani, Saaf Bijli</div>
+  <div class="loader__bar"><i id="loadBar"></i></div>
+</div>
+
+<div class="grain" aria-hidden="true"></div>
+<div class="cursor" id="cursor" aria-hidden="true"><span></span></div>
+<div class="progress" aria-hidden="true"><i id="progress"></i></div>
+
+<header class="nav">
+  <a href="#top" class="nav__logo">
+    <svg viewBox="0 0 100 125" width="22" height="28"><path d="M50 4C50 4 10 52 10 80a40 40 0 0 0 80 0C90 52 50 4 50 4Z" fill="none" stroke="currentColor" stroke-width="8"/><path d="M56 46 34 84h16l-6 26 24-40H52Z" fill="currentColor"/></svg>
+    <span>GPSB</span>
+  </a>
+  <nav class="nav__links">
+    <a href="#problem">Problem</a><a href="#science">Science</a><a href="#how">How it works</a><a href="#impact">Impact</a><a href="#cut">Director's cut</a>
+  </nav>
+  <div class="nav__tc" id="timecode">00:00:00:00</div>
+</header>
+
+<main id="top">
+
+<!-- 01 HERO -->
+<section class="hero" data-scene="01">
+  <canvas id="riverGL" class="hero__gl"></canvas>
+  <div class="hero__inner">
+    <p class="kicker reveal-up">NIB 2026 · Future Innovators Exhibition · Theme: Society Welfare</p>
+    <h1 class="hero__title split">Ganda Pani,<br><em>Saaf Bijli</em></h1>
+    <p class="hero__sub reveal-up">A drain monitor that runs on sewage. No battery. No power line.<br>Powered by the very pollution it measures.</p>
+  </div>
+  <div class="hero__scroll"><span>Scroll to roll film</span><i></i></div>
+  <aside class="ed-note">SC 01 · HOOK · 3,600 particles flow as a river. Move your cursor: the water parts. Scroll: brown sewage turns to green energy, which is the whole film in one shot.</aside>
+</section>
+
+<!-- 02 THE GOMTI : clip reveal -->
+<section class="gomti" data-scene="02">
+  <div class="gomti__pin">
+    <div class="gomti__frame" id="gomtiFrame">
+      <img src="assets/img/gomti02.jpg" alt="Boys on a wooden boat on the Gomti river, Lucknow" id="gomtiImg">
+      <span class="loctag">Gomti River, Lucknow</span>
+    </div>
+    <h2 class="gomti__title"><span class="line">This is the Gomti.</span><span class="line dim">For centuries, the lifeline of Lucknow.</span></h2>
+  </div>
+  <aside class="ed-note">SC 02 · ESTABLISHING SHOT · Clip-path iris opens from a 30% window to full bleed while the image pushes out (1.25 → 1.0). Like a slow dolly-out, it reveals the world before the problem.</aside>
+</section>
+
+<!-- 03 PROBLEM : horizontal -->
+<section class="problem" id="problem" data-scene="03">
+  <div class="problem__pin">
+    <div class="problem__head">
+      <p class="kicker">The problem</p>
+      <h2 class="h2 split-words">Every day, untreated sewage from city drains flows straight into the river.</h2>
+    </div>
+    <div class="problem__track" id="track">
+      <article class="pcard">
+        <div class="pcard__img"><img src="assets/img/hyacinth_stp.jpg" alt="City river choked with water hyacinth near a construction site"></div>
+        <span class="loctag">Mutha River, Pune</span>
+        <h3>Untreated sewage</h3><p>Drains carry city waste straight into the river.</p>
+      </article>
+      <article class="pcard">
+        <div class="pcard__img"><img src="assets/img/hyacinth.jpg" alt="River completely covered in water hyacinth"></div>
+        <span class="loctag">Mula River, Pune</span>
+        <h3>Low oxygen, hyacinth spreads</h3><p>Waste feeds weeds that choke the water and starve it of oxygen.</p>
+      </article>
+      <article class="pcard">
+        <div class="pcard__img"><img src="assets/img/fishermen.jpg" alt="Fishermen on small boats at sunset on a river with hyacinth"></div>
+        <span class="loctag">Jalangi River, West Bengal</span>
+        <h3>Families pay the price</h3><p>Fishing families and riverside homes live with the result.</p>
+      </article>
+      <article class="pcard pcard--stat">
+        <p class="kicker">Gomti Revival Mission · Oct 2025</p>
+        <div class="ring">
+          <svg viewBox="0 0 220 220"><circle cx="110" cy="110" r="94" class="ring__bg"/><circle cx="110" cy="110" r="94" class="ring__fg" id="ringFg"/></svg>
+          <div class="ring__num"><span id="ringNum">0</span>%</div>
+        </div>
+        <h3>Target: stop 95% of urban sewage from reaching the river.</h3>
+      </article>
+    </div>
+  </div>
+  <aside class="ed-note">SC 03 · TRACKING SHOT · Vertical scroll is converted into a horizontal camera move (pinned, scrubbed). Each card is a "cutaway". Location tags stay honest: these are other Indian rivers, not the Gomti.</aside>
+</section>
+
+<!-- 04 GAP -->
+<section class="gap" data-scene="04">
+  <div class="marquee" aria-hidden="true"><div class="marquee__row" id="marquee">TESTED BY HAND · FEW PLACES · FEW TIMES A YEAR · NO POWER AT DRAINS · BATTERIES DIE · TESTED BY HAND · FEW PLACES · FEW TIMES A YEAR · NO POWER AT DRAINS · BATTERIES DIE · </div></div>
+  <div class="gap__grid">
+    <div class="gap__img parallax" data-speed="-0.15"><img src="assets/img/sample2.jpg" alt="Person collecting a water sample by hand at a river"></div>
+    <div class="gap__text">
+      <p class="kicker">The gap</p>
+      <h2 class="h2 split-words">How will we know if it is working?</h2>
+      <ul class="gap__list">
+        <li class="stagger"><b>01</b> Water is tested by hand, at a few places, a few times a year.</li>
+        <li class="stagger"><b>02</b> There is no electricity supply at drain outlets.</li>
+        <li class="stagger"><b>03</b> Batteries must be changed again and again.</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="ed-note">SC 04 · TENSION · The marquee moves against scroll direction to create unease. The photo parallaxes at a different speed from the text, which gives two planes of depth like a long lens.</aside>
+</section>
+
+<!-- 05 QUESTION -->
+<section class="question" data-scene="05">
+  <div class="question__pin">
+    <p class="question__text" id="question">What if the pollution itself could <em>power</em> the monitor?</p>
+  </div>
+  <aside class="ed-note">SC 05 · THE TURN · Silence, black, one sentence. Each word lights up as you scroll. In the film, a riser lands a bass hit here and the music switches from minor to major.</aside>
+</section>
+
+<!-- 06 SCIENCE : particles -->
+<section class="science" id="science" data-scene="06">
+  <div class="science__pin">
+    <canvas id="microbes" class="science__canvas"></canvas>
+    <div class="science__text">
+      <p class="kicker">The science</p>
+      <h2 class="h2"><span class="sci-line" data-i="0">Dirty water is full of bacteria.</span>
+        <span class="sci-line" data-i="1">They eat the waste…</span>
+        <span class="sci-line" data-i="2">…and release <em>electrons</em>.</span></h2>
+      <p class="science__cap">A Microbial Fuel Cell catches those electrons with carbon electrodes and turns them into a small electric current.</p>
+    </div>
+    <div class="science__volt"><span>Cell output</span><b id="volt">0.00</b><small>V · illustrative</small></div>
+  </div>
+  <aside class="ed-note">SC 06 · VFX PLATE · Live 2D particle simulation: rod-shaped bacteria drift, and scroll releases electrons that flow upward to the anode. The voltmeter is tied to scroll progress, like a counter in an edit.</aside>
+</section>
+
+<!-- 07 REAL LAB -->
+<section class="lab" data-scene="07">
+  <div class="lab__img clip-reveal"><img src="assets/img/mfc_evobot.jpg" alt="Researcher checking microbial fuel cells in a lab"><span class="loctag">Microbial fuel cells · Bristol BioEnergy Centre, UK</span></div>
+  <div class="lab__text">
+    <p class="kicker">Proof it's real</p>
+    <h2 class="h2 split-words">Not science fiction. Microbial fuel cells already power small devices in labs around the world.</h2>
+  </div>
+  <aside class="ed-note">SC 07 · B-ROLL PROOF · A real photograph after an animation tells the viewer "this exists". The wipe reveal uses clip-path inset from right to left, the same direction as the story's flow.</aside>
+</section>
+
+<!-- 08 HOW IT WORKS : pinned steps -->
+<section class="how" id="how" data-scene="08">
+  <div class="how__pin">
+    <div class="how__head"><p class="kicker">How it works</p><h2 class="h2">Collect. Store. Measure. Send.</h2></div>
+    <svg class="how__svg" viewBox="0 0 1200 360" id="howSvg">
+      <path id="wire" d="M170 180 H420 M640 180 H760 M980 180 H1080" />
+      <g class="node" data-step="0"><rect x="20" y="90" width="150" height="180" rx="18"/><g class="cells">
+        <rect x="36" y="110" width="26" height="140" rx="6"/><rect x="70" y="110" width="26" height="140" rx="6"/><rect x="104" y="110" width="26" height="140" rx="6"/><rect x="138" y="110" width="20" height="140" rx="6"/></g>
+        <text x="95" y="300">Fuel-cell stack</text></g>
+      <g class="node" data-step="1"><rect x="420" y="110" width="220" height="140" rx="18"/><text x="530" y="170" class="t1">Power store</text><text x="530" y="200">harvester + supercap</text></g>
+      <g class="node" data-step="2"><rect x="760" y="110" width="220" height="140" rx="18"/><text x="870" y="170" class="t1" id="mcuText">Circuit</text><text x="870" y="200">wakes · measures</text></g>
+      <g class="node" data-step="3"><rect x="1080" y="70" width="100" height="220" rx="16"/><g class="waves"><path d="M1112 150 q14 14 0 28"/><path d="M1124 140 q24 24 0 48"/><path d="M1136 130 q34 34 0 68"/></g><text x="1130" y="310">Phone / map</text></g>
+    </svg>
+    <ol class="how__steps">
+      <li data-step="0"><b>01 Collect</b> 4–8 cells in series, 0.3–0.7 V each.</li>
+      <li data-step="1"><b>02 Store</b> A harvester chip charges a supercapacitor.</li>
+      <li data-step="2"><b>03 Measure</b> Every few minutes a low-power circuit wakes, reads voltage and temperature.</li>
+      <li data-step="3"><b>04 Send</b> One wireless (LoRa) packet, then back to sleep.</li>
+    </ol>
+  </div>
+  <aside class="ed-note">SC 08 · EXPLAINER · Pinned for 4 screen-heights. The wire draws itself (stroke-dashoffset scrub) and each box lights up exactly when its step is reached. Same beat-sync idea as the film, where each step lands on the narrator's word.</aside>
+</section>
+
+<!-- 09 INSIGHT : bars -->
+<section class="insight" data-scene="09">
+  <div class="insight__inner">
+    <p class="kicker">The clever part</p>
+    <h2 class="h2 split-words">Dirtier water means more food for bacteria, so more electricity.</h2>
+    <div class="bars" id="bars">
+      <div class="bar" data-h="0.14"><i></i><span>Clean water</span></div>
+      <div class="bar" data-h="0.5"><i></i><span>Pond water</span></div>
+      <div class="bar bar--hero" data-h="0.96"><i></i><span>Drain water</span></div>
+    </div>
+    <p class="fine">Illustration of the trend, not measured data.</p>
+    <p class="equation">Power source <span>=</span> Sensor</p>
+  </div>
+  <aside class="ed-note">SC 09 · PAYOFF · The biggest animation sits on the key idea. Only the drain-water bar gets the hero colour and glow: one hero element per frame, so the eye knows exactly where to look.</aside>
+</section>
+
+<!-- 10 MAP -->
+<section class="map" data-scene="10">
+  <div class="map__pin">
+    <div class="map__head"><p class="kicker">Concept dashboard · Gomti drains</p><h2 class="h2">One live map. Act where it matters.</h2></div>
+    <svg viewBox="0 0 1600 600" class="map__svg" id="mapSvg">
+      <path id="river" d="M-20 380 C 200 300, 330 480, 540 380 S 820 230, 1000 310 S 1300 470, 1620 280" />
+      <path id="riverLine" d="M-20 380 C 200 300, 330 480, 540 380 S 820 230, 1000 310 S 1300 470, 1620 280" />
+    </svg>
+    <div class="legend"><span class="d r"></span>Heavy sewage <span class="d a"></span>Improving <span class="d g"></span>Clean</div>
+  </div>
+  <aside class="ed-note">SC 10 · MOTION MAP · The river is an SVG path drawn by scroll. Drain pins pop with an overshoot ease (back.out) and then "breathe", because idle elements should never be fully dead on screen.</aside>
+</section>
+
+<!-- 11 IMPACT -->
+<section class="impact" id="impact" data-scene="11">
+  <div class="impact__grid">
+    <figure class="parallax" data-speed="-0.2"><img src="assets/img/gomti_boat.jpg" alt="Boat on the Gomti river under a bridge in Lucknow"><figcaption>Gomti River, Lucknow</figcaption></figure>
+    <figure class="parallax" data-speed="0.12"><img src="assets/img/fisherman_mahanadi.jpg" alt="Fisherman on a boat on the Mahanadi river"><figcaption>Mahanadi River</figcaption></figure>
+    <figure class="parallax" data-speed="-0.08"><img src="assets/img/ghat.jpg" alt="Ganga Mahal Ghat in Varanasi"><figcaption>Ganga · Varanasi</figcaption></figure>
+  </div>
+  <div class="impact__text">
+    <h2 class="display split-words">Healthier families. Safer fishing. A living river.</h2>
+    <p class="lead">Battery-free units at every drain that meets the Gomti, then every city on the Ganga and its rivers, wherever there is dirty water and no power.</p>
+    <div class="scale">
+      <div><b>01</b><span>Pilot at a few Lucknow drains with the Nagar Nigam</span></div>
+      <div><b>02</b><span>Every drain on the Gomti, one public map</span></div>
+      <div><b>03</b><span>Namami Gange & AMRUT cities, STPs, factories</span></div>
+    </div>
+  </div>
+  <aside class="ed-note">SC 11 · MONTAGE · Three focal planes moving at different speeds (multi-plane parallax) is the web version of a slow crane shot over people. Faces and boats carry the emotion, not graphics.</aside>
+</section>
+
+<!-- 12 DIRECTOR'S CUT -->
+<section class="cut" id="cut" data-scene="12">
+  <div class="cut__head">
+    <p class="kicker">Director's cut</p>
+    <h2 class="display split-words">The film, broken down like an editor would.</h2>
+  </div>
+  <div class="cut__player">
+    <video id="film" src="assets/video/film.mp4" poster="assets/img/poster.jpg" controls playsinline preload="none"></video>
+  </div>
+
+  <div class="cut__cols">
+    <div class="cut__col">
+      <h3>Edit decision list</h3>
+      <ol class="edl" id="edl">
+        <li data-t="0"><span>00:00</span><b>Hook</b> Establishing shot, human subject first. Title lands on the word "Gomti".</li>
+        <li data-t="8"><span>00:08</span><b>Problem</b> Hard cut to the drain on "untreated". Grade shifts to murky green-grey.</li>
+        <li data-t="28"><span>00:28</span><b>Stakes</b> 95% counter: a number gives the viewer a target to hold.</li>
+        <li data-t="40"><span>00:40</span><b>The gap</b> Chips stagger in on each spoken phrase (word-timestamp sync).</li>
+        <li data-t="62"><span>01:02</span><b>The turn</b> Riser → bass hit → black. Music modulates to major.</li>
+        <li data-t="70"><span>01:10</span><b>Title</b> Logo on a bouncy spring, shimmer SFX two frames early.</li>
+        <li data-t="78"><span>01:18</span><b>Science</b> Electrons as particles; then a real lab photo as proof.</li>
+        <li data-t="100"><span>01:40</span><b>Explainer</b> Diagram steps light up on the narrator's words.</li>
+        <li data-t="117"><span>01:57</span><b>Payoff</b> Biggest motion on the key insight, one hero colour.</li>
+        <li data-t="138"><span>02:18</span><b>Resolution</b> People, then scale: every city, every river.</li>
+        <li data-t="160"><span>02:40</span><b>Button</b> End card on the tagline, then credits.</li>
+      </ol>
+    </div>
+    <div class="cut__col">
+      <h3>Craft notes</h3>
+      <div class="notes">
+        <details open><summary>Three-act structure</summary><p>Problem (0:00–1:02) → Turn (1:02) → Solution and impact. The turn is placed near the 35% mark, the classic spot for the "inciting idea", so the second half carries the optimism.</p></details>
+        <details><summary>Ken Burns on every still</summary><p>No photo is ever static. Consecutive shots alternate push-in and pull-out (1.04↔1.18) so cuts feel motivated, with an eased curve rather than linear, which reads as "camera" not "slideshow".</p></details>
+        <details><summary>Colour grade as storytelling</summary><p>Problem scenes get a soft-light green-grey wash (murky water); solution scenes shift to a clean teal. Film grain and a vignette sit over everything to glue photos from different cameras into one world.</p></details>
+        <details><summary>2.39-style letterbox</summary><p>Black bars top and bottom signal "documentary" instantly and focus the frame. Subtitles sit just above the bar, inside the safe area.</p></details>
+        <details><summary>Sound: 50% of the picture</summary><p>Music ducks from 0.30 to 0.13 under the voice. Whooshes start 10 frames before each cut (early feels synced, late feels broken). Loudness normalised to −15 LUFS for online playback.</p></details>
+        <details><summary>Word-synced timing</summary><p>The voice-over was generated with word timestamps. Every headline, chip and diagram step is keyed to the exact word, the motion-graphics equivalent of cutting on dialogue.</p></details>
+        <details><summary>Honest captions</summary><p>Every photo carries a location tag, illustrative charts are labelled, and every image is credited. Judges trust a film that shows its sources.</p></details>
+      </div>
+    </div>
+  </div>
+  <aside class="ed-note">SC 12 · BTS · Click any EDL line to jump the player to that timecode.</aside>
+</section>
+
+<!-- 13 END -->
+<section class="end" data-scene="13">
+  <canvas id="endGL" class="end__gl"></canvas>
+  <div class="end__inner">
+    <svg viewBox="0 0 100 125" width="70" height="88" class="end__logo"><path d="M50 4C50 4 10 52 10 80a40 40 0 0 0 80 0C90 52 50 4 50 4Z" fill="none" stroke="currentColor" stroke-width="6"/><path d="M56 46 34 84h16l-6 26 24-40H52Z" fill="currentColor"/></svg>
+    <h2 class="display split">The pollution that powers its own solution.</h2>
+    <p class="kicker">National Innovators Battle 2026 · Future Innovators Exhibition · Lucknow</p>
+  </div>
+  <footer class="credits">
+    <h4>Credits</h4>
+    <p>Photos: Wikimedia Commons, used under their free licences. Diagrams, animation, music and sound made for this project. Narration: synthesised voice.</p>
+    <ul id="creditList"></ul>
+  </footer>
+</section>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js" onerror="window.__noThree=true"></script>
+<script src="main.js"></script>
+</body>
+</html>
