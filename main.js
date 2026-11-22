@@ -34,7 +34,8 @@
       tmp.childNodes.forEach((n) => {
         const wrapEm = n.nodeType === 1 && n.tagName === "EM";
         const text = n.textContent;
-        const chars = [...text].map((c) => c === " " ? " " : `<span class="ch">${c}</span>`).join("");
+        const chars = text.split(/(\s+)/).map((w) => /^\s+$/.test(w) || !w ? w :
+          `<span class="wd" style="display:inline-block;white-space:nowrap">${[...w].map((c) => `<span class="ch">${c}</span>`).join("")}</span>`).join("");
         out += wrapEm ? `<em>${chars}</em>` : chars;
       });
       return `<span class="ln">${out}</span>`;
@@ -200,7 +201,7 @@
         if (b.x < -0.05) b.x = 1.05; if (b.x > 1.05) b.x = -0.05; if (b.y < 0.4) b.a = Math.abs(b.a); if (b.y > 1.02) b.a = -Math.abs(b.a);
         const x = b.x * W, y = b.y * H;
         ctx.save(); ctx.translate(x, y); ctx.rotate(b.a);
-        ctx.fillStyle = "rgba(200,170,120,.36)"; ctx.strokeStyle = "rgba(235,205,160,.5)"; ctx.lineWidth = 1.5;
+        ctx.fillStyle = "rgba(160,200,120,.42)"; ctx.strokeStyle = "rgba(210,240,170,.55)"; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.roundRect(-b.l / 2, -7, b.l, 14, 7); ctx.fill(); ctx.stroke(); ctx.restore();
       });
       // emit electrons proportional to scroll progress (sci.p)
@@ -285,6 +286,18 @@
     gsap.to(heroState, { energy: 1, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
     gsap.to(".hero__inner", { yPercent: -30, opacity: 0, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
 
+    // 01B reel — window grows to full bleed, title lands on top
+    const reelVid = $("#reelVideo");
+    const reelChars = splitChars($("#reelTitle"));
+    const rt = gsap.timeline({ scrollTrigger: { trigger: ".reel", start: "top top", end: "bottom bottom", scrub: 1,
+      onToggle: (s) => { if (s.isActive) reelVid.play().catch(() => {}); else reelVid.pause(); } } });
+    rt.fromTo("#reelFrame", { width: () => (innerWidth < 860 ? "70vw" : "34vw"), height: () => (innerWidth < 860 ? "39.4vw" : "19.1vw"), borderRadius: 22 },
+        { width: "100vw", height: "100vh", borderRadius: 0, ease: "power2.inOut", duration: 1 })
+      .to("#reelShade", { opacity: 1, ease: "none", duration: 0.4 }, 0.6)
+      .set("#reelTitle", { opacity: 1 }, 0.72)
+      .from(reelChars, { yPercent: 120, opacity: 0, rotate: 6, stagger: 0.02, ease: "expo.out", duration: 0.35 }, 0.72)
+      .to({}, { duration: 0.25 });
+
     // 02 gomti iris
     const g = gsap.timeline({ scrollTrigger: { trigger: ".gomti", start: "top top", end: "bottom bottom", scrub: 1 } });
     g.fromTo("#gomtiFrame", { clipPath: "inset(30% 30% 30% 30% round 24px)" }, { clipPath: "inset(0% 0% 0% 0% round 0px)", ease: "power2.inOut", duration: 1 })
@@ -363,13 +376,26 @@
 
     // 12 director's cut
     gsap.from(".cut__player", { scale: 0.88, opacity: 0.4, ease: "none", scrollTrigger: { trigger: ".cut__player", start: "top bottom", end: "top 30%", scrub: true } });
-    const film = $("#film"), edl = $$("#edl li");
-    edl.forEach((li) => li.addEventListener("click", () => { film.currentTime = +li.dataset.t; film.play(); }));
-    film.addEventListener("timeupdate", () => {
-      let cur = 0; edl.forEach((li, i) => { if (film.currentTime >= +li.dataset.t) cur = i; });
-      edl.forEach((li, i) => li.classList.toggle("on", i === cur));
-    });
   }
+
+  /* ---------- golden footer motion ---------- */
+  function footer() {
+    // marquee rows drift opposite ways; scroll speed adds a kick
+    const r1 = $("#footRow1"), r2 = $("#footRow2");
+    const loop1 = gsap.to(r1, { xPercent: -50, ease: "none", duration: 28, repeat: -1 });
+    const loop2 = gsap.fromTo(r2, { xPercent: -50 }, { xPercent: 0, ease: "none", duration: 34, repeat: -1 });
+    ScrollTrigger.create({ trigger: ".foot", start: "top bottom", end: "bottom top",
+      onUpdate: (s) => { const v = gsap.utils.clamp(1, 5, 1 + Math.abs(s.getVelocity()) / 400);
+        gsap.to([loop1, loop2], { timeScale: v, duration: 0.2, overwrite: true, onComplete: () => gsap.to([loop1, loop2], { timeScale: 1, duration: 1 }) }); } });
+    // rotating badge
+    gsap.to("#footBadge", { rotate: 360, duration: 18, ease: "none", repeat: -1, transformOrigin: "50% 50%" });
+    // owner name: letter wave on enter
+    const oc = splitChars($("#footOwner"));
+    gsap.from(oc, { yPercent: 110, rotate: 8, opacity: 0, stagger: 0.035, duration: 1.1, ease: "expo.out", scrollTrigger: { trigger: "#footOwner", start: "top 90%" } });
+    $("#footOwner").addEventListener("mouseenter", () => gsap.fromTo(oc, { y: 0 }, { y: -18, stagger: 0.03, duration: 0.25, yoyo: true, repeat: 1, ease: "power2.out" }));
+    gsap.from(".foot__main", { y: 60, opacity: 0, duration: 1.2, scrollTrigger: { trigger: ".foot", start: "top 80%" } });
+  }
+  footer();
 
   /* ---------- credits ---------- */
   fetch("assets/credits.json").then((r) => r.json()).then((c) => {
