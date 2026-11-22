@@ -81,103 +81,6 @@
   });
 
   /* =========================================================
-     HERO — GPU particle river (Three.js points + custom shader)
-     ========================================================= */
-  const heroState = { mx: 9, my: 9, energy: 0 };
-  function heroRiver() {
-    const canvas = $("#riverGL");
-    if (window.__noThree || !window.THREE) return fallbackRiver(canvas);
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true });
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-    camera.position.set(0, 0.6, 9); camera.lookAt(0, 0, 0);
-    const N = 3600;
-    const pos = new Float32Array(N * 3), seed = new Float32Array(N);
-    for (let i = 0; i < N; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 22;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 1.6;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 4;
-      seed[i] = Math.random();
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute("seed", new THREE.BufferAttribute(seed, 1));
-    const mat = new THREE.ShaderMaterial({
-      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-      uniforms: { uTime: { value: 0 }, uMouse: { value: new THREE.Vector2(9, 9) }, uEnergy: { value: 0 }, uPR: { value: renderer.getPixelRatio() } },
-      vertexShader: `
-        attribute float seed; uniform float uTime, uEnergy, uPR; uniform vec2 uMouse; varying float vSeed; varying float vGlow;
-        void main(){
-          vec3 p = position;
-          float speed = 0.35 + seed * 0.5;
-          p.x = mod(p.x + uTime * speed + 11.0, 22.0) - 11.0;           // flow left -> right, wrap
-          float wave = sin(p.x * 0.55 + uTime * 0.6) * 0.9 + sin(p.x * 1.3 - uTime * 0.4) * 0.25;
-          p.y += wave - 0.3;
-          // energy: electrons lift off the river surface
-          p.y += uEnergy * seed * seed * 4.5 * (0.6 + 0.4 * sin(uTime * 2.0 + seed * 30.0));
-          // cursor parts the water
-          vec2 d = p.xy - uMouse; float r = length(d);
-          p.xy += normalize(d + 0.0001) * smoothstep(1.6, 0.0, r) * 0.9;
-          vec4 mv = modelViewMatrix * vec4(p, 1.0);
-          gl_Position = projectionMatrix * mv;
-          gl_PointSize = (2.0 + seed * 3.5) * uPR * (8.0 / -mv.z);
-          vSeed = seed; vGlow = smoothstep(1.6, 0.0, r);
-        }`,
-      fragmentShader: `
-        uniform float uEnergy; varying float vSeed; varying float vGlow;
-        void main(){
-          vec2 c = gl_PointCoord - 0.5; float d = length(c); if (d > 0.5) discard;
-          float a = smoothstep(0.5, 0.0, d);
-          vec3 mud = mix(vec3(0.48,0.39,0.25), vec3(0.18,0.50,0.63), vSeed*0.5);
-          vec3 energy = vec3(0.95,0.38,0.06);
-          vec3 col = mix(mud, energy, clamp(uEnergy * 1.4 * (0.4 + vSeed), 0.0, 1.0)) + vGlow * 0.25;
-          gl_FragColor = vec4(col, a * (0.55 + vSeed * 0.45));
-        }`,
-    });
-    scene.add(new THREE.Points(geo, mat));
-    const resize = () => {
-      const w = canvas.clientWidth, h = canvas.clientHeight;
-      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
-    };
-    resize(); addEventListener("resize", resize);
-    canvas.parentElement.addEventListener("mousemove", (e) => {
-      const r = canvas.getBoundingClientRect();
-      const nx = ((e.clientX - r.left) / r.width) * 2 - 1, ny = -((e.clientY - r.top) / r.height) * 2 + 1;
-      // project onto z=0 plane
-      const v = new THREE.Vector3(nx, ny, 0.5).unproject(camera).sub(camera.position).normalize();
-      const k = -camera.position.z / v.z; const p = camera.position.clone().add(v.multiplyScalar(k));
-      heroState.mx = p.x; heroState.my = p.y;
-    });
-    canvas.parentElement.addEventListener("mouseleave", () => { heroState.mx = 9; heroState.my = 9; });
-    let visible = true;
-    ScrollTrigger.create({ trigger: ".hero", start: "top bottom", end: "bottom top", onToggle: (s) => (visible = s.isActive) });
-    const m = mat.uniforms.uMouse.value;
-    gsap.ticker.add((t) => {
-      if (!visible) return;
-      mat.uniforms.uTime.value = reduce ? 0 : t;
-      m.x += (heroState.mx - m.x) * 0.08; m.y += (heroState.my - m.y) * 0.08;
-      mat.uniforms.uEnergy.value = heroState.energy;
-      camera.position.y = 0.6 + heroState.energy * 1.2;
-      camera.lookAt(0, heroState.energy * 0.8, 0);
-      renderer.render(scene, camera);
-    });
-  }
-  function fallbackRiver(canvas) {
-    const ctx = canvas.getContext("2d"); const pts = Array.from({ length: 900 }, () => ({ x: Math.random(), y: Math.random(), s: Math.random() }));
-    const fit = () => { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }; fit(); addEventListener("resize", fit);
-    gsap.ticker.add((t) => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      pts.forEach((p) => {
-        const x = ((p.x + t * 0.02 * (0.5 + p.s)) % 1) * canvas.width;
-        const y = canvas.height * 0.62 + Math.sin(x * 0.006 + t * 0.6) * 60 + (p.y - 0.5) * 80 - heroState.energy * p.s * p.s * 300;
-        ctx.fillStyle = heroState.energy > p.s ? "rgba(242,98,15,.8)" : "rgba(160,130,80,.6)";
-        ctx.fillRect(x, y, 2 + p.s * 2, 2 + p.s * 2);
-      });
-    });
-  }
-
-  /* =========================================================
      SCIENCE — Canvas2D microbe + electron simulation
      ========================================================= */
   const sci = { p: 0 };
@@ -282,10 +185,6 @@
     });
     $$(".stagger").forEach((el, i) => gsap.from(el, { y: 40, opacity: 0, duration: 1, delay: (i % 3) * 0.08, scrollTrigger: { trigger: el, start: "top 88%" } }));
 
-    // hero: scroll converts mud -> energy, title drifts
-    gsap.to(heroState, { energy: 1, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
-    gsap.to(".hero__inner", { yPercent: -30, opacity: 0, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
-
     // 01B reel — window grows to full bleed, title lands on top
     const reelVid = $("#reelVideo");
     const reelChars = splitChars($("#reelTitle"));
@@ -294,9 +193,12 @@
     rt.fromTo("#reelFrame", { width: () => (innerWidth < 860 ? "70vw" : "34vw"), height: () => (innerWidth < 860 ? "39.4vw" : "19.1vw"), borderRadius: 22 },
         { width: "100vw", height: "100vh", borderRadius: 0, ease: "power2.inOut", duration: 1 })
       .to("#reelShade", { opacity: 1, ease: "none", duration: 0.4 }, 0.6)
+      .to(["#reelKicker", "#reelHint"], { opacity: 0, y: -24, ease: "power2.in", duration: 0.22 }, 0)
       .set("#reelTitle", { opacity: 1 }, 0.72)
       .from(reelChars, { yPercent: 120, opacity: 0, rotate: 6, stagger: 0.02, ease: "expo.out", duration: 0.35 }, 0.72)
-      .to({}, { duration: 0.25 });
+      .to("#reelCopy", { opacity: 1, ease: "power2.out", duration: 0.2 }, 0.95)
+      .from("#reelCopy", { y: 30, ease: "power2.out", duration: 0.2 }, 0.95)
+      .to({}, { duration: 0.3 });
 
     // 02 gomti iris
     const g = gsap.timeline({ scrollTrigger: { trigger: ".gomti", start: "top top", end: "bottom bottom", scrub: 1 } });
@@ -403,15 +305,15 @@
   }).catch(() => {});
 
   /* ---------- boot: loader -> hero intro ---------- */
-  const heroChars = splitChars($(".hero__title"));
-  heroRiver(); microbes(); endField();
+  gsap.set("#reelFrame", { xPercent: -50, yPercent: -50, x: 0, y: 0 });
+  microbes(); endField();
   scenes(); // scroll-scrubbed scenes only move when the user scrolls, so they stay on for reduced-motion users
 
   const count = { v: 0 };
-  const intro = gsap.timeline({ paused: true })
-    .from(heroChars, { yPercent: 120, rotate: 8, duration: 1.3, stagger: 0.025, ease: "expo.out" })
-    .from(".hero .reveal-up", { y: 30, opacity: 0, duration: 1, stagger: 0.12 }, 0.3)
-    .from(".hero__scroll", { opacity: 0, duration: 1 }, 0.8);
+  const intro = gsap.timeline({ paused: true, onStart: () => $("#reelVideo").play().catch(() => {}) })
+    .from("#reelFrame", { scale: 0.82, opacity: 0, duration: 1.4, ease: "expo.out" })
+    .from("#reelKicker", { y: 24, opacity: 0, duration: 1 }, 0.25)
+    .from("#reelHint", { y: -16, opacity: 0, duration: 1 }, 0.45);
   gsap.timeline()
     .to(count, { v: 100, duration: reduce ? 0.2 : 1.6, ease: "power2.inOut",
       onUpdate: () => { $("#loadNum").textContent = Math.round(count.v); $("#loadBar").style.width = count.v + "%"; } })

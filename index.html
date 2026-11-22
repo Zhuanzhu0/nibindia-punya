@@ -44,29 +44,24 @@
 
 <main id="top">
 
-<!-- 01 HERO -->
-<section class="hero" data-scene="01">
-  <canvas id="riverGL" class="hero__gl"></canvas>
-  <div class="hero__inner">
-    <p class="kicker reveal-up">NIB 2026 · Future Innovators Exhibition · Theme: Society Welfare</p>
-    <h1 class="hero__title split">Ganda Pani,<br><em>Saaf Bijli</em></h1>
-    <p class="hero__by reveal-up">A project by <b>Punya Shri Hari</b></p>
-    <p class="hero__sub reveal-up">A drain monitor that runs on sewage. No battery. No power line.<br>Powered by the very pollution it measures.</p>
-  </div>
-  <div class="hero__scroll"><span>Scroll to roll film</span><i></i></div>
-  <aside class="ed-note">SC 01 · HOOK · 3,600 particles flow as a river. Move your cursor: the water parts. Scroll: brown sewage turns to green energy, which is the whole film in one shot.</aside>
-</section>
-
-<!-- 01B THE REEL : video enlargement -->
-<section class="reel" data-scene="01B">
+<!-- 01 HERO REEL : video enlargement -->
+<section class="reel" data-scene="01">
   <div class="reel__pin">
     <div class="reel__frame" id="reelFrame">
       <video id="reelVideo" src="assets/video/broll.mp4" poster="assets/img/broll_poster.jpg" muted loop playsinline preload="auto" aria-label="Reel of rivers, fishermen and microbial fuel cells"></video>
       <div class="reel__shade" id="reelShade"></div>
     </div>
-    <h2 class="reel__title" id="reelTitle">Ganda Paani,<br><em>Saaf Bijli</em></h2>
+    <p class="reel__kicker" id="reelKicker">NIB 2026 · Future Innovators Exhibition · Theme: Society Welfare</p>
+    <div class="reel__text">
+      <h1 class="reel__title" id="reelTitle">Ganda Paani,<br><em>Saaf Bijli</em></h1>
+      <div class="reel__copy" id="reelCopy">
+        <p class="reel__by">A project by <b>Punya Shri Hari</b></p>
+        <p class="reel__sub">A drain monitor that runs on sewage. No battery. No power line. Powered by the very pollution it measures.</p>
+      </div>
+    </div>
+    <div class="reel__hint" id="reelHint"><span>Scroll to roll film</span><i></i></div>
   </div>
-  <aside class="ed-note">SC 01B · THE REEL · A small window grows to full bleed as you scroll, like a push-in from a wide to a close shot. The title lands on top only once the picture fills the frame, so the image is established before the words.</aside>
+  <aside class="ed-note">SC 01 · HOOK / THE REEL · A small window grows to full bleed as you scroll, like a push-in from a wide to a close shot. The title lands on top only once the picture fills the frame, so the image is established before the words.</aside>
 </section>
 
 <!-- 02 THE GOMTI : clip reveal -->
@@ -299,7 +294,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js" onerror="window.__noThree=true"></script>
 <script src="main.js"></script>
 </body>
 </html>
