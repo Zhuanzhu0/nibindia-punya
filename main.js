@@ -129,7 +129,7 @@
           vec2 c = gl_PointCoord - 0.5; float d = length(c); if (d > 0.5) discard;
           float a = smoothstep(0.5, 0.0, d);
           vec3 mud = mix(vec3(0.48,0.39,0.25), vec3(0.18,0.50,0.63), vSeed*0.5);
-          vec3 energy = vec3(0.23,0.89,0.64);
+          vec3 energy = vec3(0.95,0.38,0.06);
           vec3 col = mix(mud, energy, clamp(uEnergy * 1.4 * (0.4 + vSeed), 0.0, 1.0)) + vGlow * 0.25;
           gl_FragColor = vec4(col, a * (0.55 + vSeed * 0.45));
         }`,
@@ -170,7 +170,7 @@
       pts.forEach((p) => {
         const x = ((p.x + t * 0.02 * (0.5 + p.s)) % 1) * canvas.width;
         const y = canvas.height * 0.62 + Math.sin(x * 0.006 + t * 0.6) * 60 + (p.y - 0.5) * 80 - heroState.energy * p.s * p.s * 300;
-        ctx.fillStyle = heroState.energy > p.s ? "rgba(59,227,164,.8)" : "rgba(160,130,80,.6)";
+        ctx.fillStyle = heroState.energy > p.s ? "rgba(242,98,15,.8)" : "rgba(160,130,80,.6)";
         ctx.fillRect(x, y, 2 + p.s * 2, 2 + p.s * 2);
       });
     });
@@ -200,7 +200,7 @@
         if (b.x < -0.05) b.x = 1.05; if (b.x > 1.05) b.x = -0.05; if (b.y < 0.4) b.a = Math.abs(b.a); if (b.y > 1.02) b.a = -Math.abs(b.a);
         const x = b.x * W, y = b.y * H;
         ctx.save(); ctx.translate(x, y); ctx.rotate(b.a);
-        ctx.fillStyle = "rgba(160,200,120,.42)"; ctx.strokeStyle = "rgba(210,240,170,.55)"; ctx.lineWidth = 1.5;
+        ctx.fillStyle = "rgba(200,170,120,.36)"; ctx.strokeStyle = "rgba(235,205,160,.5)"; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.roundRect(-b.l / 2, -7, b.l, 14, 7); ctx.fill(); ctx.stroke(); ctx.restore();
       });
       // emit electrons proportional to scroll progress (sci.p)
@@ -213,9 +213,9 @@
         p.vx += (tx - p.x) * 0.00012 * dt; p.x += p.vx; p.y -= (1.2 + p.life * 1.4) * dt * 0.06;
         if (p.y < plateY) { e.splice(i, 1); continue; }
         const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 14);
-        g.addColorStop(0, "rgba(59,227,164,.9)"); g.addColorStop(1, "rgba(59,227,164,0)");
+        g.addColorStop(0, "rgba(242,98,15,.9)"); g.addColorStop(1, "rgba(242,98,15,0)");
         ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, 14, 0, 6.28); ctx.fill();
-        ctx.fillStyle = "#04110b"; ctx.fillText("e", p.x - 4, p.y + 4);
+        ctx.fillStyle = "#1a0a02"; ctx.fillText("e", p.x - 4, p.y + 4);
       }
     });
   }
@@ -232,7 +232,7 @@
       if (!vis) return; ctx.clearRect(0, 0, W, H);
       ps.forEach((p) => {
         const y = ((p.y - t * 0.02 * (0.3 + p.s)) % 1 + 1) % 1 * H, x = p.x * W + Math.sin(t + p.s * 20) * 20;
-        ctx.fillStyle = `rgba(59,227,164,${0.15 + p.s * 0.5})`; ctx.beginPath(); ctx.arc(x, y, 1 + p.s * 2.5, 0, 6.28); ctx.fill();
+        ctx.fillStyle = `rgba(242,98,15,${0.15 + p.s * 0.5})`; ctx.beginPath(); ctx.arc(x, y, 1 + p.s * 2.5, 0, 6.28); ctx.fill();
       });
     });
   }
@@ -348,7 +348,7 @@
     // 10 map — path draw + pins
     const river = $("#river"), rLine = $("#riverLine"), L = river.getTotalLength(), svg = $("#mapSvg");
     [river, rLine].forEach((p) => gsap.set(p, { strokeDasharray: L, strokeDashoffset: L }));
-    const cols = ["#e5574b", "#f2b544", "#e5574b", "#3be3a4", "#f2b544", "#3be3a4", "#e5574b"];
+    const cols = ["#d63a3a", "#c9b48a", "#d63a3a", "#5fb8e0", "#c9b48a", "#5fb8e0", "#d63a3a"];
     const pins = cols.map((c, i) => {
       const pt = river.getPointAtLength(L * (0.1 + i * 0.13));
       const gEl = document.createElementNS("http://www.w3.org/2000/svg", "g"); gEl.setAttribute("class", "pin");
