@@ -185,24 +185,14 @@
     });
     $$(".stagger").forEach((el, i) => gsap.from(el, { y: 40, opacity: 0, duration: 1, delay: (i % 3) * 0.08, scrollTrigger: { trigger: el, start: "top 88%" } }));
 
-    // 01B reel — window grows to full bleed, title lands on top
+    // 01 hero reel — just keeps playing; pause it when off screen to save battery
     const reelVid = $("#reelVideo");
-    const reelChars = splitChars($("#reelTitle"));
-    const rt = gsap.timeline({ scrollTrigger: { trigger: ".reel", start: "top top", end: "bottom bottom", scrub: 1,
-      onToggle: (s) => { if (s.isActive) reelVid.play().catch(() => {}); else reelVid.pause(); } } });
-    rt.fromTo("#reelFrame", { width: () => (innerWidth < 860 ? "70vw" : "34vw"), height: () => (innerWidth < 860 ? "39.4vw" : "19.1vw"), borderRadius: 22 },
-        { width: "100vw", height: "100vh", borderRadius: 0, ease: "power2.inOut", duration: 1 })
-      .to("#reelShade", { opacity: 1, ease: "none", duration: 0.4 }, 0.6)
-      .to(["#reelKicker", "#reelHint"], { opacity: 0, y: -24, ease: "power2.in", duration: 0.22 }, 0)
-      .set("#reelTitle", { opacity: 1 }, 0.72)
-      .from(reelChars, { yPercent: 120, opacity: 0, rotate: 6, stagger: 0.02, ease: "expo.out", duration: 0.35 }, 0.72)
-      .to("#reelCopy", { opacity: 1, ease: "power2.out", duration: 0.2 }, 0.95)
-      .from("#reelCopy", { y: 30, ease: "power2.out", duration: 0.2 }, 0.95)
-      .to({}, { duration: 0.3 });
+    ScrollTrigger.create({ trigger: ".reel", start: "top bottom", end: "bottom top",
+      onToggle: (s) => { if (s.isActive) reelVid.play().catch(() => {}); else reelVid.pause(); } });
 
     // 02 gomti iris
     const g = gsap.timeline({ scrollTrigger: { trigger: ".gomti", start: "top top", end: "bottom bottom", scrub: 1 } });
-    g.fromTo("#gomtiFrame", { clipPath: "inset(30% 30% 30% 30% round 24px)" }, { clipPath: "inset(0% 0% 0% 0% round 0px)", ease: "power2.inOut", duration: 1 })
+    g.fromTo("#gomtiFrame", { clipPath: "inset(55% 0% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", ease: "power2.out", duration: 1 })
      .fromTo("#gomtiImg", { scale: 1.25 }, { scale: 1, ease: "power1.inOut", duration: 1.4 }, 0)
      .from(".gomti__title .line", { yPercent: 60, opacity: 0, stagger: 0.25, duration: 0.5, ease: "power3.out" }, 0.7);
 
@@ -305,15 +295,17 @@
   }).catch(() => {});
 
   /* ---------- boot: loader -> hero intro ---------- */
-  gsap.set("#reelFrame", { xPercent: -50, yPercent: -50, x: 0, y: 0 });
+  const reelChars = splitChars($("#reelTitle"));
   microbes(); endField();
   scenes(); // scroll-scrubbed scenes only move when the user scrolls, so they stay on for reduced-motion users
 
   const count = { v: 0 };
   const intro = gsap.timeline({ paused: true, onStart: () => $("#reelVideo").play().catch(() => {}) })
-    .from("#reelFrame", { scale: 0.82, opacity: 0, duration: 1.4, ease: "expo.out" })
-    .from("#reelKicker", { y: 24, opacity: 0, duration: 1 }, 0.25)
-    .from("#reelHint", { y: -16, opacity: 0, duration: 1 }, 0.45);
+    .from("#reelFrame", { opacity: 0, duration: 1.2, ease: "power2.out" })
+    .from(reelChars, { yPercent: 120, opacity: 0, rotate: 6, duration: 1.2, stagger: 0.025, ease: "expo.out" }, 0.2)
+    .from("#reelKicker", { y: -16, opacity: 0, duration: 1 }, 0.4)
+    .from("#reelCopy > *", { y: 24, opacity: 0, duration: 1, stagger: 0.12 }, 0.7)
+    .from("#reelHint", { opacity: 0, duration: 1 }, 1.1);
   gsap.timeline()
     .to(count, { v: 100, duration: reduce ? 0.2 : 1.6, ease: "power2.inOut",
       onUpdate: () => { $("#loadNum").textContent = Math.round(count.v); $("#loadBar").style.width = count.v + "%"; } })

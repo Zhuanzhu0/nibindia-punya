@@ -80,7 +80,7 @@ section{position:relative}
 /* ---------- 02 gomti ---------- */
 .gomti{height:260vh}
 .gomti__pin{position:sticky;top:0;height:100vh;overflow:hidden;display:flex;align-items:flex-end}
-.gomti__frame{position:absolute;inset:0;clip-path:inset(30% 30% 30% 30% round 24px)}
+.gomti__frame{position:absolute;inset:0;clip-path:inset(55% 0% 0% 0%)}
 .gomti__frame img{width:100%;height:100%;object-fit:cover;transform:scale(1.25)}
 .gomti__frame::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15),transparent 40%,rgba(0,0,0,.75))}
 .gomti__frame .loctag{top:auto;bottom:auto;top:90px;left:var(--pad)}
@@ -331,3 +331,14 @@ section{position:relative}
 .reel__hint i{width:60px;height:1px;background:var(--dim);position:relative;overflow:hidden}
 .reel__hint i::after{content:"";position:absolute;inset:0;background:var(--hero);animation:scan 2s var(--ease) infinite}
 @media (max-width:860px){.reel__kicker{top:calc(50% - 19.7vw - 70px);padding:0 var(--pad)}.reel__hint{top:calc(50% + 19.7vw + 30px)}}
+
+/* ---------- hero reel: full-bleed, always playing (no scroll transition) ---------- */
+.reel{height:100vh;min-height:620px}
+.reel__pin{position:relative;height:100%}
+.reel__frame{left:0;top:0;width:100%;height:100%;transform:none;border-radius:0;box-shadow:none}
+.reel__shade{opacity:1}
+.reel__title{opacity:1}
+.reel__copy{opacity:1}
+.reel__kicker{top:110px;color:#e9e3d8;text-shadow:0 2px 14px rgba(0,0,0,.8)}
+.reel__hint{top:auto;bottom:40px;color:#e9e3d8}
+@media (max-width:860px){.reel__frame{width:100%;height:100%}.reel__kicker{top:96px}.reel__hint{top:auto}}
