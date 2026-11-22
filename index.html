@@ -29,10 +29,16 @@
     <svg viewBox="0 0 100 125" width="22" height="28"><path d="M50 4C50 4 10 52 10 80a40 40 0 0 0 80 0C90 52 50 4 50 4Z" fill="none" stroke="currentColor" stroke-width="8"/><path d="M56 46 34 84h16l-6 26 24-40H52Z" fill="currentColor"/></svg>
     <span>GPSB</span>
   </a>
-  <nav class="nav__links">
-    <a href="#problem">Problem</a><a href="#science">Science</a><a href="#how">How it works</a><a href="#impact">Impact</a><a href="#cut">Director's cut</a>
-  </nav>
-  <div class="nav__tc" id="timecode">00:00:00:00</div>
+  <div class="nav__right">
+    <div class="nav__tc" id="timecode">00:00:00:00</div>
+    <div class="menu">
+      <button class="dots" id="menuBtn" aria-expanded="false" aria-controls="menuPanel" aria-label="Open menu"><i></i><i></i><i></i></button>
+      <nav class="menu__panel" id="menuPanel" hidden>
+        <a href="#problem">Problem</a><a href="#science">Science</a><a href="#how">How it works</a><a href="#impact">Impact</a><a href="#cut">Director's cut</a>
+        <label class="menu__toggle"><input type="checkbox" id="notesToggle"> Show all editor's notes</label>
+      </nav>
+    </div>
+  </div>
 </header>
 
 <main id="top">
@@ -99,7 +105,6 @@
 
 <!-- 04 GAP -->
 <section class="gap" data-scene="04">
-  <div class="marquee" aria-hidden="true"><div class="marquee__row" id="marquee">TESTED BY HAND · FEW PLACES · FEW TIMES A YEAR · NO POWER AT DRAINS · BATTERIES DIE · TESTED BY HAND · FEW PLACES · FEW TIMES A YEAR · NO POWER AT DRAINS · BATTERIES DIE · </div></div>
   <div class="gap__grid">
     <div class="gap__img parallax" data-speed="-0.15"><img src="assets/img/sample2.jpg" alt="Person collecting a water sample by hand at a river"></div>
     <div class="gap__text">
@@ -112,7 +117,7 @@
       </ul>
     </div>
   </div>
-  <aside class="ed-note">SC 04 · TENSION · The marquee moves against scroll direction to create unease. The photo parallaxes at a different speed from the text, which gives two planes of depth like a long lens.</aside>
+  <aside class="ed-note">SC 04 · TENSION · The photo parallaxes at a different speed from the text, which gives two planes of depth like a long lens.</aside>
 </section>
 
 <!-- 05 QUESTION -->
@@ -231,8 +236,8 @@
   </div>
 
   <div class="cut__cols">
-    <div class="cut__col">
-      <h3>Edit decision list</h3>
+    <details class="drop cut__col">
+      <summary>Edit decision list <small>11 shots · click to jump</small></summary>
       <ol class="edl" id="edl">
         <li data-t="0"><span>00:00</span><b>Hook</b> Establishing shot, human subject first. Title lands on the word "Gomti".</li>
         <li data-t="8"><span>00:08</span><b>Problem</b> Hard cut to the drain on "untreated". Grade shifts to murky green-grey.</li>
@@ -246,11 +251,11 @@
         <li data-t="138"><span>02:18</span><b>Resolution</b> People, then scale: every city, every river.</li>
         <li data-t="160"><span>02:40</span><b>Button</b> End card on the tagline, then credits.</li>
       </ol>
-    </div>
-    <div class="cut__col">
-      <h3>Craft notes</h3>
+    </details>
+    <details class="drop cut__col">
+      <summary>Craft notes <small>7 techniques</small></summary>
       <div class="notes">
-        <details open><summary>Three-act structure</summary><p>Problem (0:00–1:02) → Turn (1:02) → Solution and impact. The turn is placed near the 35% mark, the classic spot for the "inciting idea", so the second half carries the optimism.</p></details>
+        <details><summary>Three-act structure</summary><p>Problem (0:00–1:02) → Turn (1:02) → Solution and impact. The turn is placed near the 35% mark, the classic spot for the "inciting idea", so the second half carries the optimism.</p></details>
         <details><summary>Ken Burns on every still</summary><p>No photo is ever static. Consecutive shots alternate push-in and pull-out (1.04↔1.18) so cuts feel motivated, with an eased curve rather than linear, which reads as "camera" not "slideshow".</p></details>
         <details><summary>Colour grade as storytelling</summary><p>Problem scenes get a soft-light green-grey wash (murky water); solution scenes shift to a clean teal. Film grain and a vignette sit over everything to glue photos from different cameras into one world.</p></details>
         <details><summary>2.39-style letterbox</summary><p>Black bars top and bottom signal "documentary" instantly and focus the frame. Subtitles sit just above the bar, inside the safe area.</p></details>
@@ -258,7 +263,7 @@
         <details><summary>Word-synced timing</summary><p>The voice-over was generated with word timestamps. Every headline, chip and diagram step is keyed to the exact word, the motion-graphics equivalent of cutting on dialogue.</p></details>
         <details><summary>Honest captions</summary><p>Every photo carries a location tag, illustrative charts are labelled, and every image is credited. Judges trust a film that shows its sources.</p></details>
       </div>
-    </div>
+    </details>
   </div>
   <aside class="ed-note">SC 12 · BTS · Click any EDL line to jump the player to that timecode.</aside>
 </section>
@@ -272,9 +277,10 @@
     <p class="kicker">National Innovators Battle 2026 · Future Innovators Exhibition · Lucknow</p>
   </div>
   <footer class="credits">
-    <h4>Credits</h4>
+    <details class="drop"><summary>Credits &amp; licences</summary>
     <p>Photos: Wikimedia Commons, used under their free licences. Diagrams, animation, music and sound made for this project. Narration: synthesised voice.</p>
     <ul id="creditList"></ul>
+    </details>
   </footer>
 </section>
 

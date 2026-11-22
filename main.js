@@ -247,6 +247,27 @@
     if (note && pin) pin.append(note);
   });
 
+  // collapse each editor's note behind a dots button
+  const notes = [];
+  $$(".ed-note").forEach((n) => {
+    const text = n.textContent.trim();
+    n.innerHTML = `<div class="row"><span class="ed-label">Editor's note</span><button class="dots" aria-expanded="false" aria-label="Show editor's note"><i></i><i></i><i></i></button></div><div class="ed-body" hidden></div>`;
+    const btn = $("button", n), body = $(".ed-body", n);
+    body.textContent = text;
+    const set = (open) => { body.hidden = !open; btn.setAttribute("aria-expanded", open); if (open) gsap.from(body, { y: 10, opacity: 0, duration: 0.5 }); };
+    btn.addEventListener("click", () => set(body.hidden));
+    notes.push(set);
+  });
+  $("#notesToggle").addEventListener("change", (e) => notes.forEach((s) => s(e.target.checked)));
+
+  // 3-dot nav menu
+  const mBtn = $("#menuBtn"), mPanel = $("#menuPanel");
+  const setMenu = (open) => { mPanel.hidden = !open; mBtn.setAttribute("aria-expanded", open); if (open) gsap.from(mPanel, { y: -8, opacity: 0, duration: 0.4 }); };
+  mBtn.addEventListener("click", (e) => { e.stopPropagation(); setMenu(mPanel.hidden); });
+  document.addEventListener("click", (e) => { if (!mPanel.hidden && !e.target.closest(".menu")) setMenu(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") setMenu(false); });
+  $$("a", mPanel).forEach((a) => a.addEventListener("click", () => setMenu(false)));
+
   function scenes() {
     // generic word reveals
     $$(".split-words").forEach((el) => {
@@ -283,7 +304,6 @@
       onUpdate: () => { $("#ringNum").textContent = Math.round(ring.v); gsap.set("#ringFg", { strokeDashoffset: 590.6 * (1 - ring.v / 100) }); } });
 
     // 04 marquee + parallax
-    gsap.fromTo("#marquee", { xPercent: 0 }, { xPercent: -40, ease: "none", scrollTrigger: { trigger: ".gap", start: "top bottom", end: "bottom top", scrub: true } });
     $$(".parallax").forEach((el) => {
       const sp = parseFloat(el.dataset.speed || "-0.15"); const img = $("img", el);
       gsap.fromTo(img, { yPercent: sp * 50 }, { yPercent: -sp * 50, ease: "none", scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true } });
